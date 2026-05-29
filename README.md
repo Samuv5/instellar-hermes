@@ -9,6 +9,7 @@
 </p>
 
 <p align="center">
+  <a href="https://samuv5.github.io/instellar-hermes/"><img src="https://img.shields.io/badge/🌐-instellar--hermes.github.io-blue?style=for-the-badge" alt="Website"></a>
   <a href="https://github.com/NousResearch/hermes-agent"><img src="https://img.shields.io/badge/Fork%20of-Hermes%20Agent-blueviolet?style=for-the-badge" alt="Fork of Hermes Agent"></a>
   <a href="https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
 </p>
