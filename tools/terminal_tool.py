@@ -1957,6 +1957,34 @@ def terminal_tool(
                 desc = approval.get("description", "flagged as dangerous")
                 approval_note = f"Command was flagged ({desc}) and auto-approved by smart approval."
 
+        # ── Instellar Security Middleware (HITL) ────────────────────────
+        if not force:
+            try:
+                from tools.security_middleware import validate_command
+                sec = validate_command(command, env_type=env_type)
+                if not sec["approved"]:
+                    logger.warning(
+                        "Security middleware blocked command: %s (layer=%s) — cmd: %.200s",
+                        sec.get("reason", "unknown"), sec.get("layer", "?"), command,
+                    )
+                    return json.dumps({
+                        "output": "",
+                        "exit_code": -1,
+                        "error": f"Security middleware: {sec.get('reason', 'Command blocked')}",
+                        "status": "blocked",
+                        "security_layer": sec.get("layer", ""),
+                    }, ensure_ascii=False)
+            except ImportError:
+                pass  # security_middleware not installed — skip
+            except Exception as exc:
+                logger.error("Security middleware error (fail-safe DENY): %s", exc)
+                return json.dumps({
+                    "output": "",
+                    "exit_code": -1,
+                    "error": f"Security middleware error: {exc}",
+                    "status": "blocked",
+                }, ensure_ascii=False)
+
         # Validate workdir against shell injection
         if workdir:
             workdir_error = _validate_workdir(workdir)

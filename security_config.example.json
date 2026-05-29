@@ -1,0 +1,36 @@
+{
+  "_comment": "Instellar Hermes — Security Middleware Configuration",
+  "_comment2": "Copy this file to ~/.hermes/security_config.json and fill in your values.",
+
+  "enabled": true,
+  "static_filter": true,
+  "sudo_whitelist": true,
+  "telegram_gate": true,
+
+  "sudo_whitelist": [
+    "apt update",
+    "apt upgrade -y",
+    "apt install",
+    "apt remove",
+    "systemctl restart",
+    "systemctl start",
+    "systemctl stop",
+    "systemctl status",
+    "systemctl enable",
+    "systemctl disable",
+    "systemctl daemon-reload",
+    "pip install",
+    "pip3 install",
+    "npm install -g",
+    "chown",
+    "chmod",
+    "mkdir -p",
+    "ln -sf"
+  ],
+
+  "telegram_token": "YOUR_BOT_TOKEN_HERE",
+  "telegram_chat_id": "YOUR_CHAT_ID_HERE",
+  "timeout_seconds": 120,
+
+  "env_skip": ["docker", "singularity", "modal", "daytona"]
+}
