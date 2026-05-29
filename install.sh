@@ -8,7 +8,7 @@ set -euo pipefail
 # that protects your system via Telegram-based command approval.
 # =============================================================================
 
-REPO_URL="https://github.com/instellar-hermes/instellar-hermes"
+REPO_URL="https://github.com/Samuv5/instellar-hermes.git"
 INSTALL_DIR="${INSTELLAR_HOME:-$HOME/.instellar}"
 PYTHON="${PYTHON:-python3}"
 VENV_DIR="$INSTALL_DIR/venv"
