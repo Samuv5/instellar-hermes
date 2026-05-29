@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instellar Hermes — HITL Security Middleware</title>
+  <meta name="description" content="Fork de Hermes-Agent con Human-in-the-Loop Security Middleware. Protege tu sistema vía Telegram.">
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0c10;
+      --bg2: #111318;
+      --bg3: #181a20;
+      --surface: #1c1e26;
+      --border: #2a2d3a;
+      --text: #e1e4ed;
+      --text2: #8b90a0;
+      --accent: #6c5ce7;
+      --accent2: #a29bfe;
+      --green: #00cec9;
+      --red: #ff6b6b;
+      --orange: #fdcb6e;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+      --rad: 12px;
+      --shadow: 0 8px 32px rgba(0,0,0,.4);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent2); text-decoration: none; transition: color .2s; }
+    a:hover { color: var(--accent); }
+    img { max-width: 100%; }
+
+    /* ─── Utility ──────────────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* ─── Nav ──────────────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(10,12,16,.85); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    nav .container {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .logo { font-weight: 700; font-size: 1.25rem; letter-spacing: -.02em; }
+    .logo span { color: var(--accent); }
+    .nav-links { display: flex; gap: 28px; align-items: center; }
+    .nav-links a { font-size: .9rem; color: var(--text2); font-weight: 500; }
+    .nav-links a:hover { color: var(--text); }
+    .btn-small {
+      display: inline-block;
+      background: var(--accent); color: #fff !important;
+      padding: 8px 18px; border-radius: 8px; font-size: .85rem;
+      font-weight: 600; transition: background .2s, transform .15s;
+    }
+    .btn-small:hover { background: #5a4bd1; transform: translateY(-1px); }
+
+    /* ─── Hero ─────────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh; display: flex; align-items: center;
+      position: relative; overflow: hidden;
+      padding: 120px 0 80px;
+    }
+    .hero::before {
+      content: ''; position: absolute;
+      top: -40%; left: -20%; width: 80%; height: 100%;
+      background: radial-gradient(circle, rgba(108,92,231,.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-content { position: relative; z-index: 1; }
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 800; letter-spacing: -.03em; line-height: 1.1;
+      margin-bottom: 20px;
+    }
+    .hero h1 .highlight {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 1.15rem; color: var(--text2);
+      max-width: 640px; margin-bottom: 36px;
+    }
+    .hero-buttons { display: flex; gap: 14px; flex-wrap: wrap; }
+    .btn-primary, .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 32px; border-radius: 10px; font-weight: 600;
+      font-size: .95rem; transition: all .2s; cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--accent); color: #fff !important;
+      border: none;
+    }
+    .btn-primary:hover { background: #5a4bd1; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(108,92,231,.3); }
+    .btn-secondary {
+      background: var(--surface); color: var(--text) !important;
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--bg3); transform: translateY(-2px); }
+
+    /* ─── Badge ────────────────────────────────────────────────── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 6px 14px; border-radius: 100px; font-size: .8rem;
+      color: var(--text2); margin-bottom: 24px;
+    }
+    .badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; }
+
+    /* ─── Sections ─────────────────────────────────────────────── */
+    section { padding: 100px 0; }
+    .section-title {
+      font-size: 2rem; font-weight: 700; margin-bottom: 12px;
+      letter-spacing: -.02em;
+    }
+    .section-sub {
+      color: var(--text2); font-size: 1.05rem; max-width: 600px;
+      margin-bottom: 48px;
+    }
+
+    /* ─── Features Grid ────────────────────────────────────────── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--rad); padding: 32px;
+      transition: transform .2s, border-color .2s;
+    }
+    .feature-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+    .feature-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; margin-bottom: 18px;
+    }
+    .feature-card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; }
+    .feature-card p { font-size: .9rem; color: var(--text2); line-height: 1.7; }
+
+    /* ─── Flow / Pipeline ──────────────────────────────────────── */
+    .flow { background: var(--bg2); }
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px; align-items: start;
+    }
+    .flow-step {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--rad); padding: 24px; text-align: center;
+      position: relative;
+    }
+    .flow-step .step-num {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: .85rem; font-weight: 700; margin-bottom: 12px;
+    }
+    .flow-step h4 { font-size: 1rem; margin-bottom: 6px; }
+    .flow-step p { font-size: .85rem; color: var(--text2); }
+    .flow-arrow {
+      display: none; font-size: 1.4rem; color: var(--text2);
+      align-self: center; justify-self: center;
+    }
+    @media (min-width: 960px) {
+      .flow-steps { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    /* ─── Architecture Diagram ─────────────────────────────────── */
+    .diagram {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--rad); padding: 32px 24px;
+      font-family: var(--mono); font-size: .85rem;
+      overflow-x: auto; margin: 32px 0;
+    }
+    .diagram .line { white-space: pre; }
+    .diagram .arrow { color: var(--text2); }
+    .diagram .gate { color: var(--accent2); font-weight: 600; }
+    .diagram .block { color: var(--red); }
+    .diagram .ok { color: var(--green); }
+    .diagram .cmt { color: var(--text2); }
+
+    /* ─── Install ──────────────────────────────────────────────── */
+    .code-block {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--rad); padding: 20px 24px;
+      font-family: var(--mono); font-size: .85rem;
+      overflow-x: auto; margin: 16px 0; position: relative;
+    }
+    .code-block .prompt { color: var(--green); }
+    .code-block .cmt { color: var(--text2); }
+    .code-block .str { color: var(--orange); }
+    .code-block .kw { color: var(--accent2); }
+
+    .install-steps {
+      counter-reset: step;
+    }
+    .install-step {
+      counter-increment: step;
+      display: flex; gap: 16px; margin-bottom: 24px;
+      align-items: flex-start;
+    }
+    .install-step::before {
+      content: counter(step);
+      min-width: 32px; height: 32px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .85rem; font-weight: 700; margin-top: 2px;
+    }
+    .install-step-body { flex: 1; }
+    .install-step-body h4 { font-size: 1rem; margin-bottom: 6px; }
+    .install-step-body p { font-size: .9rem; color: var(--text2); margin-bottom: 8px; }
+
+    .copy-btn {
+      position: absolute; top: 12px; right: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text2); padding: 4px 10px; border-radius: 6px;
+      font-size: .75rem; cursor: pointer; font-family: var(--font);
+      transition: all .2s;
+    }
+    .copy-btn:hover { background: var(--bg3); color: var(--text); }
+
+    /* ─── Config Table ─────────────────────────────────────────── */
+    .config-table {
+      width: 100%; border-collapse: separate; border-spacing: 0;
+      font-size: .9rem; margin: 24px 0;
+    }
+    .config-table th {
+      text-align: left; padding: 12px 16px;
+      background: var(--surface); color: var(--text2);
+      font-weight: 600; font-size: .8rem; text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .config-table th:first-child { border-radius: 8px 0 0 0; }
+    .config-table th:last-child { border-radius: 0 8px 0 0; }
+    .config-table td {
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+    }
+    .config-table tr:last-child td:first-child { border-radius: 0 0 0 8px; }
+    .config-table tr:last-child td:last-child { border-radius: 0 0 8px 0; }
+    .config-table code {
+      background: var(--bg3); padding: 2px 8px; border-radius: 4px;
+      font-family: var(--mono); font-size: .8rem;
+    }
+
+    /* ─── Footer ───────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 48px 0; text-align: center;
+    }
+    footer p { color: var(--text2); font-size: .85rem; }
+    footer a { color: var(--accent2); }
+
+    /* ─── Responsive ───────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .nav-links a:not(.btn-small) { display: none; }
+      section { padding: 64px 0; }
+      .hero h1 { font-size: 2rem; }
+      .features-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Nav ══════════════════════════════════════════════════════ -->
+<nav>
+  <div class="container">
+    <a href="#" class="logo">instellar<span>·</span>hermes</a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#install">Install</a>
+      <a href="#config">Config</a>
+      <a href="https://github.com/Samuv5/instellar-hermes" class="btn-small" target="_blank">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ Hero ═════════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="container hero-content">
+    <div class="badge">
+      <span class="dot"></span> Fork of Hermes-Agent — Security Enhanced
+    </div>
+    <h1>
+      Run AI agents safely<br>
+      with <span class="highlight">Human-in-the-Loop</span>
+    </h1>
+    <p>
+      Instellar Hermes extends the Hermes-Agent framework with a three-layer security
+      middleware that protects your system. Every critical command is blocked, whitelisted,
+      or sent to your Telegram for approval — before it ever reaches the shell.
+    </p>
+    <div class="hero-buttons">
+      <a href="#install" class="btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Quick Install
+      </a>
+      <a href="https://github.com/Samuv5/instellar-hermes" class="btn-secondary" target="_blank">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        Source
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Features ════════════════════════════════════════════════ -->
+<section id="features">
+  <div class="container">
+    <h2 class="section-title">Three Layers of Protection</h2>
+    <p class="section-sub">Every command passes through a pipeline of security gates. If any layer rejects it, the command never executes.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(255,107,107,.12); color:var(--red);">⛔</div>
+        <h3>Static Filter</h3>
+        <p>Commands containing <code>rm -rf</code> (bare), <code>chmod 777</code>, <code>dd</code> to block devices, or access to <code>/etc/shadow</code> are blocked unconditionally — no exceptions.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(253,203,110,.12); color:var(--orange);">🔑</div>
+        <h3>Sudo Whitelist</h3>
+        <p>Only specific sudo commands from your local <code>sudo_whitelist.json</code> are allowed. Any sudo command not in the list is denied immediately.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(108,92,231,.12); color:var(--accent2);">📱</div>
+        <h3>Telegram Gate</h3>
+        <p>Critical commands (install, mv, write, package managers, etc.) pause execution and send an approval request to your Telegram bot. Approve or deny with one tap.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(0,206,201,.12); color:var(--green);">🛡️</div>
+        <h3>Fail-Safe by Design</h3>
+        <p>If the Telegram bot doesn't respond, the token is missing, or any error occurs — the command is <strong>denied</strong>. Your system is always protected.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(162,155,254,.12); color:var(--accent2);">🔌</div>
+        <h3>Non-Intrusive</h3>
+        <p>The middleware integrates seamlessly into <code>terminal_tool()</code> — the existing Hermes guards (tirith, dangerous patterns) still run first. The middleware is an additional layer, not a replacement.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(255,255,255,.06); color:var(--text);">⚡</div>
+        <h3>Easy Setup</h3>
+        <p>Single command install via <code>install.sh</code>. Create your Telegram bot with @BotFather, fill in the config, and you're protected.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ How It Works ═══════════════════════════════════════════ -->
+<section id="how-it-works" class="flow">
+  <div class="container">
+    <h2 class="section-title">Execution Pipeline</h2>
+    <p class="section-sub">Every terminal command flows through this pipeline. The middleware intercepts right before the subprocess call.</p>
+
+    <div class="diagram">
+      <div class="line"><span class="cmt"># ── Execution flow ──────────────────────────────</span></div>
+      <div class="line"> </div>
+      <div class="line"> LLM → <span class="gate">terminal_tool()</span> → <span class="gate">Hermes Guards</span></div>
+      <div class="line">                                ↓</div>
+      <div class="line">                         <span class="gate">Security Middleware</span></div>
+      <div class="line">                          ├─ <span class="gate">Static Filter</span>   <span class="block">⛔ rm -rf /  ← blocked</span></div>
+      <div class="line">                          ├─ <span class="gate">Sudo Whitelist</span> <span class="block">⛔ sudo rm -rf  ← blocked</span></div>
+      <div class="line">                          ├─ <span class="gate">Telegram Gate</span>  <span class="ok">✅ approved  → runs</span></div>
+      <div class="line">                          │                   <span class="block">❌ denied     → blocked</span></div>
+      <div class="line">                          │                   <span class="block">⏱️ timeout    → blocked</span></div>
+      <div class="line">                          ↓                    <span class="block">⚠️ error      → blocked</span></div>
+      <div class="line">                         <span class="ok">subprocess.Popen()</span></div>
+    </div>
+
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="step-num">1</div>
+        <h4>Static Filter</h4>
+        <p>Checks command against blocklist patterns. <strong>Any match → denied.</strong></p>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <h4>Sudo Whitelist</h4>
+        <p>If command uses <code>sudo</code>, checks against the whitelist JSON. <strong>No match → denied.</strong></p>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <h4>Telegram Gate</h4>
+        <p>If command is critical, sends to Telegram bot. <strong>Waits for ✅ or ❌ — timeout = deny.</strong></p>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">4</div>
+        <h4>Execute</h4>
+        <p>Only if all gates pass. <strong>Any error in any gate → command never runs.</strong></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Install ════════════════════════════════════════════════ -->
+<section id="install">
+  <div class="container">
+    <h2 class="section-title">Quick Install</h2>
+    <p class="section-sub">Get Instellar Hermes running in under a minute. You'll need Python 3.11+, git, and a Telegram bot token.</p>
+
+    <div class="install-steps">
+      <div class="install-step">
+        <div class="install-step-body">
+          <h4>Clone the repository</h4>
+          <p>This is the Instellar Hermes fork — not the upstream. The middleware is built in.</p>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copy(this)">Copy</button>
+            <span class="prompt">$</span> git clone https://github.com/Samuv5/instellar-hermes.git
+            <span class="prompt">$</span> <span class="kw">cd</span> instellar-hermes
+          </div>
+        </div>
+      </div>
+
+      <div class="install-step">
+        <div class="install-step-body">
+          <h4>Run the installer</h4>
+          <p>The installer creates a virtual environment, installs dependencies (including <code>python-telegram-bot</code>), and generates the security config template.</p>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copy(this)">Copy</button>
+            <span class="prompt">$</span> <span class="kw">chmod</span> +x install.sh<br>
+            <span class="prompt">$</span> ./install.sh
+          </div>
+        </div>
+      </div>
+
+      <div class="install-step">
+        <div class="install-step-body">
+          <h4>Create your Telegram Bot</h4>
+          <p>
+            Open Telegram, search for <strong>@BotFather</strong>, and send <code>/newbot</code>.
+            Follow the prompts to get your API token. Then send a message to your new bot.
+          </p>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copy(this)">Copy</button>
+            <span class="cmt"># Find your chat_id — visit this URL in your browser:</span><br>
+            <span class="str">https://api.telegram.org/bot&lt;YOUR_TOKEN&gt;/getUpdates</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="install-step">
+        <div class="install-step-body">
+          <h4>Configure the middleware</h4>
+          <p>Edit <code>~/.hermes/security_config.json</code> with your bot token, chat ID, and sudo whitelist.</p>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copy(this)">Copy</button>
+            <span class="prompt">$</span> nano ~/.hermes/security_config.json
+          </div>
+        </div>
+      </div>
+
+      <div class="install-step">
+        <div class="install-step-body">
+          <h4>Run Hermes</h4>
+          <p>Activate the virtual environment and start. The middleware is active by default.</p>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copy(this)">Copy</button>
+            <span class="prompt">$</span> <span class="kw">source</span> ~/.instellar/venv/bin/activate<br>
+            <span class="prompt">$</span> hermes run
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:48px; background:var(--surface); border:1px solid var(--border); border-radius:var(--rad); padding:32px;">
+      <h3 style="margin-bottom:12px; font-size:1.1rem;">Or install manually</h3>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copy(this)">Copy</button>
+        <span class="cmt"># Clone the fork</span><br>
+        git clone https://github.com/Samuv5/instellar-hermes.git<br>
+        <span class="kw">cd</span> instellar-hermes<br><br>
+        <span class="cmt"># Create virtual environment</span><br>
+        python3 -m venv venv<br>
+        <span class="kw">source</span> venv/bin/activate<br><br>
+        <span class="cmt"># Install with messaging extra (includes python-telegram-bot)</span><br>
+        pip install -e .[messaging]<br><br>
+        <span class="cmt"># Create security config</span><br>
+        mkdir -p ~/.hermes<br>
+        cp security_config.example.json ~/.hermes/security_config.json<br>
+        nano ~/.hermes/security_config.json<br><br>
+        <span class="cmt"># Run</span><br>
+        hermes run
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Config ═════════════════════════════════════════════════ -->
+<section id="config" style="background:var(--bg2);">
+  <div class="container">
+    <h2 class="section-title">Configuration</h2>
+    <p class="section-sub">The middleware reads from <code>~/.hermes/security_config.json</code>. All fields are optional — set what you need.</p>
+
+    <div style="overflow-x:auto;">
+      <table class="config-table">
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Type</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>enabled</code></td>
+            <td>bool</td>
+            <td><code>true</code></td>
+            <td>Master switch — disable all middleware layers</td>
+          </tr>
+          <tr>
+            <td><code>static_filter</code></td>
+            <td>bool</td>
+            <td><code>true</code></td>
+            <td>Block <code>rm -rf</code> (bare), <code>chmod 777</code>, <code>dd</code> to <code>/dev/</code>, <code>/etc/shadow</code></td>
+          </tr>
+          <tr>
+            <td><code>sudo_whitelist</code></td>
+            <td>array</td>
+            <td><code>[...]</code></td>
+            <td>List of allowed sudo command prefixes</td>
+          </tr>
+          <tr>
+            <td><code>telegram_gate</code></td>
+            <td>bool</td>
+            <td><code>true</code></td>
+            <td>Enable Telegram approval for critical commands</td>
+          </tr>
+          <tr>
+            <td><code>telegram_token</code></td>
+            <td>string</td>
+            <td><code>""</code></td>
+            <td>Your bot token from @BotFather</td>
+          </tr>
+          <tr>
+            <td><code>telegram_chat_id</code></td>
+            <td>string</td>
+            <td><code>""</code></td>
+            <td>Your Telegram chat ID</td>
+          </tr>
+          <tr>
+            <td><code>timeout_seconds</code></td>
+            <td>int</td>
+            <td><code>120</code></td>
+            <td>How long to wait for Telegram approval before auto-denying</td>
+          </tr>
+          <tr>
+            <td><code>env_skip</code></td>
+            <td>array</td>
+            <td><code>["docker","singularity","modal","daytona"]</code></td>
+            <td>Environment types that skip the middleware (containers are isolated)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="code-block" style="margin-top:24px;">
+      <button class="copy-btn" onclick="copy(this)">Copy</button>
+      <span class="cmt">// ~/.hermes/security_config.json — Full example</span><br>
+      {<br>
+      &nbsp;&nbsp;<span class="str">"enabled"</span>: <span class="kw">true</span>,<br>
+      &nbsp;&nbsp;<span class="str">"static_filter"</span>: <span class="kw">true</span>,<br>
+      &nbsp;&nbsp;<span class="str">"sudo_whitelist"</span>: <span class="kw">true</span>,<br>
+      &nbsp;&nbsp;<span class="str">"telegram_gate"</span>: <span class="kw">true</span>,<br>
+      &nbsp;&nbsp;<span class="str">"sudo_whitelist"</span>: [<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"apt update"</span>,<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"apt install"</span>,<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"systemctl restart"</span>,<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"pip install"</span><br>
+      &nbsp;&nbsp;],<br>
+      &nbsp;&nbsp;<span class="str">"telegram_token"</span>: <span class="str">"YOUR_BOT_TOKEN"</span>,<br>
+      &nbsp;&nbsp;<span class="str">"telegram_chat_id"</span>: <span class="str">"YOUR_CHAT_ID"</span>,<br>
+      &nbsp;&nbsp;<span class="str">"timeout_seconds"</span>: <span class="kw">120</span>,<br>
+      &nbsp;&nbsp;<span class="str">"env_skip"</span>: [<span class="str">"docker"</span>, <span class="str">"singularity"</span>, <span class="str">"modal"</span>, <span class="str">"daytona"</span>]<br>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Footer ═════════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <p>
+      <strong>Instellar Hermes</strong> —
+      Fork of <a href="https://github.com/NousResearch/hermes-agent" target="_blank">Hermes-Agent</a> by Nous Research.
+      MIT License.
+    </p>
+    <p style="margin-top:8px;">
+      <a href="https://github.com/Samuv5/instellar-hermes">GitHub</a> ·
+      <a href="https://github.com/Samuv5/instellar-hermes/issues">Issues</a> ·
+      <a href="https://github.com/Samuv5/instellar-hermes/blob/main/LICENSE">License</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+  function copy(btn) {
+    const block = btn.parentElement;
+    const text = block.textContent.replace('Copy', '').trim();
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
+    });
+  }
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+
+</body>
+</html>
